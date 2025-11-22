@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Моя Unity IT-Quiz игра">
+    <title>Моя Unity Игра</title>
+    <link rel="stylesheet" href="styleUnity.css">
+    <script src="Script.js"></script>
+</head>
+<body>
+    <!-- Контейнер для Unity -->
+    <div class="webgl-content">
+        <div id="unity-container" class="unity-desktop">
+            <canvas id="unity-canvas" width="1280" height="720"></canvas>
+            <div id="unity-loading-bar">
+                <div id="unity-logo"></div>
+                <div id="unity-progress-bar-empty">
+                    <div id="unity-progress-bar-full"></div>
+                </div>
+            </div>
+            <div id="unity-warning"></div>
+            <div id="unity-footer">
+                <button id="unity-fullscreen-button" class="unity-fullscreen-button">Fullscreen</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ⚠️ ЗАМЕНИТЕ ЭТИ ПУТИ НА СВОИ ФАЙЛЫ!
+        var buildUrl = "Build/";
+        var loaderUrl = buildUrl + "HASSE.framework.js";
+        var config = {
+            dataUrl: buildUrl + "HASSE.data",
+            frameworkUrl: buildUrl + "HASSE.framework.js",
+            codeUrl: buildUrl + "HASSE.wasm",
+            streamingAssetsUrl: "StreamingAssets",
+            companyName: "Radianti",
+            productName: "IT-Quiz",
+            productVersion: "1.0",
+        };
+
+        // Загрузка игры
+        var container = document.querySelector("#unity-container");
+        var canvas = document.querySelector("#unity-canvas");
+        var loadingBar = document.querySelector("#unity-loading-bar");
+        var progressBarFull = document.querySelector("#unity-progress-bar-full");
+        var fullscreenButton = document.querySelector("#unity-fullscreen-button");
+        var warningBanner = document.querySelector("#unity-warning");
+
+        // Для мобильных устройств
+        if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
+            container.className = "unity-mobile";
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+
+        // Загрузка игры
+        var script = document.createElement("script");
+        script.src = loaderUrl;
+        script.onload = () => {
+            createUnityInstance(canvas, config, (progress) => {
+                progressBarFull.style.width = 100 * progress + "%";
+            }).then((unityInstance) => {
+                loadingBar.style.display = "none";
+                fullscreenButton.onclick = () => {
+                    unityInstance.SetFullscreen(1);
+                };
+            }).catch((message) => {
+                alert(message);
+            });
+        };
+        document.body.appendChild(script);
+    </script>
+</body>
+</html>
