@@ -44,12 +44,45 @@
     var loadingBar = document.querySelector("#unity-loading-bar");
     var progressBarFull = document.querySelector("#unity-progress-bar-full");
     var fullscreenButton = document.querySelector("#unity-fullscreen-button");
+    var unityInstance = null;
 
-    // Для мобильных устройств
+    // Устанавливаем нормальное разрешение сразу
+    function setNormalResolution() {
+        container.className = "unity-desktop";
+        canvas.style.width = "1280px";  // ⬅️ Нормальное разрешение
+        canvas.style.height = "720px";  // ⬅️ Нормальное разрешение
+        container.style.width = "1280px";
+        container.style.height = "720px";
+    }
+
+    // Полноэкранный режим
+    function enterFullscreen() {
+        if (unityInstance) {
+            unityInstance.SetFullscreen(1);
+            fullscreenButton.style.display = "none"; // Скрываем кнопку
+        }
+    }
+    // Выход из полноэкранного режима
+    function exitFullscreen() {
+        if (unityInstance) {
+            unityInstance.SetFullscreen(0);
+            fullscreenButton.style.display = "block"; // Показываем кнопку
+        }
+    }
+     // Слушатель изменения полноэкранного режима
+    document.addEventListener("fullscreenchange", function() {
+        if (!document.fullscreenElement) {
+            exitFullscreen();
+        }
+    });
+    
+     // Для мобильных устройств
     if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
         container.className = "unity-mobile";
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
+    } else {
+        setNormalResolution(); // Устанавливаем нормальное разрешение для ПК
     }
 
     // Загрузка игры через loader.js
@@ -64,9 +97,8 @@
             loadingBar.style.display = "none";
             console.log("Игра успешно загружена!");
             
-            // Fullscreen кнопка
-            fullscreenButton.onclick = function() {
-                instance.SetFullscreen(1);
+            // Назначаем обработчик кнопки
+            fullscreenButton.onclick = enterFullscreen;
             };
         }).catch(function(error) {
             alert("Ошибка загрузки игры: " + error);
@@ -83,3 +115,4 @@
 </body>
 
 </html>
+
