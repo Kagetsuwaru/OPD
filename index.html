@@ -54,26 +54,6 @@
         container.style.height = "720px";
     }
 
-    // Полноэкранный режим
-    function enterFullscreen() {
-        if (unityInstance) {
-            unityInstance.SetFullscreen(1);
-            fullscreenButton.style.display = "none"; // Скрываем кнопку
-        }
-    }
-    // Выход из полноэкранного режима
-    function exitFullscreen() {
-        if (unityInstance) {
-            unityInstance.SetFullscreen(0);
-            fullscreenButton.style.display = "block"; // Показываем кнопку
-        }
-    }
-     // Слушатель изменения полноэкранного режима
-    document.addEventListener("fullscreenchange", function() {
-        if (!document.fullscreenElement) {
-            exitFullscreen();
-        }
-    });
     
      // Для мобильных устройств
     if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
@@ -96,8 +76,9 @@
             loadingBar.style.display = "none";
             console.log("Игра успешно загружена!");
             
-            // Назначаем обработчик кнопки
-            fullscreenButton.onclick = enterFullscreen;
+            // ПРОСТАЯ РАБОЧАЯ КНОПКА FULLSCREEN
+            fullscreenButton.onclick = function() {
+                instance.SetFullscreen(1);
             };
         }).catch(function(error) {
             alert("Ошибка загрузки игры: " + error);
@@ -114,6 +95,7 @@
 </body>
 
 </html>
+
 
 
 
