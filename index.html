@@ -44,14 +44,43 @@
     var loadingBar = document.querySelector("#unity-loading-bar");
     var progressBarFull = document.querySelector("#unity-progress-bar-full");
     var fullscreenButton = document.querySelector("#unity-fullscreen-button");
+function scaleGame() {
+        if (!unityInstance) return;
+        
+        // Получаем настройки разрешения из Unity
+        var gameWidth = 1280;  // Разрешение вашей игры
+        var gameHeight = 720;  // Разрешение вашей игры
+        var containerWidth = container.clientWidth;
+        var containerHeight = container.clientHeight;
+        
+        // Вычисляем соотношение сторон
+        var gameAspect = gameWidth / gameHeight;
+        var containerAspect = containerWidth / containerHeight;
+        
+        // Масштабируем чтобы вместить игру в контейнер
+        if (containerAspect > gameAspect) {
+            // Широкий контейнер - масштабируем по высоте
+            canvas.style.width = (containerHeight * gameAspect) + "px";
+            canvas.style.height = containerHeight + "px";
+        } else {
+            // Высокий контейнер - масштабируем по ширине
+            canvas.style.width = containerWidth + "px";
+            canvas.style.height = (containerWidth / gameAspect) + "px";
+        }
+        
+        // Центрируем canvas
+        canvas.style.margin = "0 auto";
+        canvas.style.display = "block";
+    }
 
-    // Устанавливаем нормальное разрешение сразу
+    // Устанавливаем нормальное разрешение
     function setNormalResolution() {
         container.className = "unity-desktop";
-        canvas.style.width = "1280px";  // ⬅️ Нормальное разрешение
-        canvas.style.height = "720px";  // ⬅️ Нормальное разрешение
-        container.style.width = "1366px";
-        container.style.height = "768px";
+        container.style.width = "1280px";
+        container.style.height = "720px";
+        
+        // Применяем масштабирование после загрузки Unity
+        setTimeout(scaleGame, 100);
     }
 
     
@@ -95,6 +124,7 @@
 </body>
 
 </html>
+
 
 
 
