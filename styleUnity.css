@@ -37,7 +37,7 @@ body {
 /* Canvas */
 #unity-canvas {
     background: #231F20;
-    max-width: 100%;
+    max-width: 120%;
     max-height: 100%;
     object-fit: contain; /* Сохраняет пропорции */
 }
@@ -162,6 +162,7 @@ body::-webkit-scrollbar-thumb {
     background: #333;
     border-radius: 4px;
 }
+
 
 
 
