@@ -17,8 +17,8 @@ body {
 
 /* Десктопная версия - нормальное разрешение */
 .unity-desktop {
-    width: 1366px;
-    height: 768px;
+    width: 1280px;
+    height: 720px;
     position: relative;
     margin: 0 auto;
     border: 2px solid #333;
@@ -161,4 +161,5 @@ body::-webkit-scrollbar-thumb {
     background: #333;
     border-radius: 4px;
 }
+
 
