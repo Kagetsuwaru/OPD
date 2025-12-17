@@ -90,9 +90,60 @@
     
         document.body.appendChild(script);
     </script>
+    <script>
+    // Функция для скачивания CSV файлов в WebGL
+    function downloadCSV(csvContent, fileName) {
+        console.log('Downloading CSV:', fileName);
+    
+        // Создаем Blob с CSV данными
+        const blob = new Blob([csvContent], { 
+            type: 'text/csv;charset=utf-8;' 
+        });
+    
+        // Для современных браузеров
+        if (navigator.msSaveBlob) {
+            // IE 10+
+            navigator.msSaveBlob(blob, fileName);
+        } else {
+            // Другие браузеры
+            const link = document.createElement('a');
+            if (link.download !== undefined) {
+                // Создаем URL для Blob
+                const url = URL.createObjectURL(blob);
+                link.setAttribute('href', url);
+                link.setAttribute('download', fileName);
+                link.style.visibility = 'hidden';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
+                // Освобождаем память
+                setTimeout(() => URL.revokeObjectURL(url), 100);
+            } else {
+                alert('Ваш браузер не поддерживает скачивание файлов');
+            }
+        }
+    }
+
+    // Экспортируем функцию для Unity
+    window.downloadCSV = downloadCSV;
+
+    // Функция для проверки доступности Google Sheets
+    function checkGoogleSheets(url) {
+        return fetch(url, { method: 'GET', mode: 'no-cors' })
+            .then(() => true)
+            .catch(() => false);
+    }
+
+    // Сообщаем Unity что JS функции готовы
+    if (typeof unityInstance !== 'undefined') {
+        console.log('JavaScript functions ready for Unity');
+    }
+    </script>
 </body>
 
 </html>
+
 
 
 
