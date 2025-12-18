@@ -6,9 +6,11 @@
     <meta name="description" content="Моя Unity IT-Quiz игра">
     <title>Моя Unity Игра</title>
     <link rel="stylesheet" href="styleUnity.css">
-    <script src="Script.js"></script>
 </head>
 <body>
+    <!-- Статус подключения Google Sheets -->
+    <div id="connection-status" style="display:none; position:fixed; top:10px; right:10px; padding:8px 15px; background:rgba(0,0,0,0.7); color:white; border-radius:20px; font-size:12px; z-index:99;"></div>
+
     <!-- Контейнер для Unity -->
     <div class="webgl-content">
         <div id="unity-container" class="unity-desktop">
@@ -27,7 +29,96 @@
     </div>
 
     <script>
-    // ⚠️ Исправленные пути с .unityweb расширением
+    // ========== ФУНКЦИИ ДЛЯ РАБОТЫ С GOOGLE SHEETS ==========
+    
+    // 1. Функция для скачивания CSV (вызывается из Unity)
+    function downloadCSV(csvContent, fileName) {
+        console.log('📥 Скачивание CSV:', fileName);
+        
+        const blob = new Blob([csvContent], { 
+            type: 'text/csv;charset=utf-8;' 
+        });
+        
+        if (navigator.msSaveBlob) {
+            navigator.msSaveBlob(blob, fileName);
+        } else {
+            const link = document.createElement('a');
+            if (link.download !== undefined) {
+                const url = URL.createObjectURL(blob);
+                link.setAttribute('href', url);
+                link.setAttribute('download', fileName);
+                link.style.visibility = 'hidden';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
+                setTimeout(() => URL.revokeObjectURL(url), 100);
+            } else {
+                alert('Ваш браузер не поддерживает скачивание файлов');
+            }
+        }
+    }
+    
+    // 2. Функции для полного экрана (для совместимости)
+    function ToggleFullscreen_WebGL() {
+        const canvas = document.querySelector("#unity-canvas");
+        
+        if (!document.fullscreenElement && !document.webkitFullscreenElement && !document.msFullscreenElement) {
+            if (canvas.requestFullscreen) canvas.requestFullscreen();
+            else if (canvas.webkitRequestFullscreen) canvas.webkitRequestFullscreen();
+            else if (canvas.msRequestFullscreen) canvas.msRequestFullscreen();
+        } else {
+            if (document.exitFullscreen) document.exitFullscreen();
+            else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+            else if (document.msExitFullscreen) document.msExitFullscreen();
+        }
+    }
+    
+    function IsFullscreen_WebGL() {
+        return !!(document.fullscreenElement || document.webkitFullscreenElement || document.msFullscreenElement);
+    }
+    
+    // 3. Функция для тестирования подключения к Google Sheets
+    function testGoogleSheetsConnection() {
+        const url = 'https://script.google.com/macros/s/AKfycbyycSAi0mW6TT3N0ubeTEH8rhxhoKqD0SFJlB-YbTq_9YVuV74JUbD-ESb92PjtqhhP/exec?action=test';
+        
+        fetch(url)
+            .then(response => {
+                if (!response.ok) throw new Error('Network response was not ok');
+                return response.json();
+            })
+            .then(data => {
+                console.log('✅ Тест подключения:', data);
+                updateConnectionStatus(true);
+            })
+            .catch(error => {
+                console.error('❌ Ошибка подключения:', error);
+                updateConnectionStatus(false);
+            });
+    }
+    
+    // 4. Обновление статуса подключения
+    function updateConnectionStatus(isConnected) {
+        const statusElement = document.getElementById('connection-status');
+        if (statusElement) {
+            statusElement.style.display = 'block';
+            statusElement.textContent = isConnected ? 
+                '✅ Подключено к Google Sheets' : 
+                '❌ Нет подключения к Google Sheets';
+            statusElement.style.backgroundColor = isConnected ? 
+                'rgba(76, 175, 80, 0.8)' : 
+                'rgba(244, 67, 54, 0.8)';
+        }
+    }
+    
+    // 5. Экспорт функций в глобальную область видимости
+    window.downloadCSV = downloadCSV;
+    window.ToggleFullscreen_WebGL = ToggleFullscreen_WebGL;
+    window.IsFullscreen_WebGL = IsFullscreen_WebGL;
+    
+    // ========== ЗАГРУЗКА UNITY ==========
+    
+    // Пути к файлам Unity
     var buildUrl = "Build/";
     
     var config = {
@@ -45,24 +136,23 @@
     var progressBarFull = document.querySelector("#unity-progress-bar-full");
     var fullscreenButton = document.querySelector("#unity-fullscreen-button");
 
-    // Устанавливаем нормальное разрешение
+    // Настройка разрешения
     function setNormalResolution() {
         container.className = "unity-desktop";
         container.style.width = "1280px";
         container.style.height = "720px";
     }
 
-    
-     // Для мобильных устройств
+    // Для мобильных устройств
     if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
         container.className = "unity-mobile";
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
     } else {
-        setNormalResolution(); // Устанавливаем нормальное разрешение для ПК
+        setNormalResolution();
     }
 
-    // Загрузка игры через loader.js
+    // Загрузка игры
     var script = document.createElement("script");
     script.src = buildUrl + "HASSE.loader.js";
     
@@ -72,86 +162,55 @@
             console.log("Загрузка: " + (progress * 100).toFixed(0) + "%");
         }).then(function(instance) {
             loadingBar.style.display = "none";
-            console.log("Игра успешно загружена!");
+            console.log("✅ Игра успешно загружена!");
             
-            // ПРОСТАЯ РАБОЧАЯ КНОПКА FULLSCREEN
-            fullscreenButton.onclick = function() {
-                instance.SetFullscreen(1);
-            };
+            // Сохраняем инстанс Unity для доступа из других функций
+            window.unityInstance = instance;
+            
+            // Настраиваем кнопку полноэкранного режима
+            if (fullscreenButton) {
+                fullscreenButton.onclick = function() {
+                    ToggleFullscreen_WebGL();
+                };
+            }
+            
+            // Тестируем подключение к Google Sheets через 2 секунды
+            setTimeout(testGoogleSheetsConnection, 2000);
+            
         }).catch(function(error) {
-            alert("Ошибка загрузки игры: " + error);
-            console.error("Unity error:", error);
+            console.error("❌ Ошибка загрузки Unity:", error);
+            alert("Ошибка загрузки игры. Пожалуйста, обновите страницу.");
+            updateConnectionStatus(false);
         });
     };
     
     script.onerror = function() {
-        alert("Ошибка: Не удалось загрузить HASSE.loader.js");
+        console.error("❌ Не удалось загрузить HASSE.loader.js");
+        alert("Ошибка: Не удалось загрузить игровой движок.");
+        updateConnectionStatus(false);
     };
     
-        document.body.appendChild(script);
-    </script>
-    <script>
-    // Функция для скачивания CSV файлов в WebGL
-    function downloadCSV(csvContent, fileName) {
-        console.log('Downloading CSV:', fileName);
+    document.body.appendChild(script);
     
-        // Создаем Blob с CSV данными
-        const blob = new Blob([csvContent], { 
-            type: 'text/csv;charset=utf-8;' 
-        });
-    
-        // Для современных браузеров
-        if (navigator.msSaveBlob) {
-            // IE 10+
-            navigator.msSaveBlob(blob, fileName);
-        } else {
-            // Другие браузеры
-            const link = document.createElement('a');
-            if (link.download !== undefined) {
-                // Создаем URL для Blob
-                const url = URL.createObjectURL(blob);
-                link.setAttribute('href', url);
-                link.setAttribute('download', fileName);
-                link.style.visibility = 'hidden';
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-                
-                // Освобождаем память
-                setTimeout(() => URL.revokeObjectURL(url), 100);
-            } else {
-                alert('Ваш браузер не поддерживает скачивание файлов');
-            }
+    // Горячая клавиша F11 для полного экрана
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'F11' || e.key === 'f11') {
+            e.preventDefault();
+            ToggleFullscreen_WebGL();
         }
+    });
+    
+    // Обработчики событий изменения размера экрана
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+    document.addEventListener('msfullscreenchange', handleFullscreenChange);
+    
+    function handleFullscreenChange() {
+        console.log("🖥️ Режим экрана изменен:", IsFullscreen_WebGL() ? "Полный экран" : "Оконный");
     }
-
-    // Экспортируем функцию для Unity
-    window.downloadCSV = downloadCSV;
-
-    // Функция для проверки доступности Google Sheets
-    function checkGoogleSheets(url) {
-        return fetch(url, { method: 'GET', mode: 'no-cors' })
-            .then(() => true)
-            .catch(() => false);
-    }
-
-    // Сообщаем Unity что JS функции готовы
-    if (typeof unityInstance !== 'undefined') {
-        console.log('JavaScript functions ready for Unity');
-    }
+    
+    // Сообщаем в консоль, что JavaScript готов
+    console.log('✅ JavaScript функции для Google Sheets готовы');
     </script>
 </body>
-
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
